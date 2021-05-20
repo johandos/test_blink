@@ -1,0 +1,45 @@
+version: '3'
+services:
+  #Nginx Service
+  webserver:
+    image: nginx:mainline
+    depends_on:
+      - app
+    command: [ nginx-debug, '-g', 'daemon off;' ]
+    container_name: web-test_blink
+    volumes:
+      - ./docker/nginx/ssl:/ssl/
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      vpcbr:
+        ipv4_address: 11.5.0.4
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app-test_blink
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      vpcbr:
+        ipv4_address: 11.5.0.3
+#Volumes
+volumes:
+  dbdatabo:
+    driver: local
+
+networks:
+  vpcbr:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 11.5.0.0/16
+          gateway: 11.5.0.1
